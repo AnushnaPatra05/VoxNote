@@ -40,25 +40,25 @@ const userSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Hash password before saving
 userSchema.pre('save', async function (next) {
   if (!this.isModified('password')) return next();
   this.password = await bcrypt.hash(this.password, 12);
   next();
 });
 
-// Compare passwords
 userSchema.methods.comparePassword = async function (candidate) {
   return bcrypt.compare(candidate, this.password);
 };
 
-// Reset daily usage if new day
 userSchema.methods.resetDailyUsageIfNeeded = async function () {
   const todayMidnight = new Date(new Date().setHours(0, 0, 0, 0));
   if (this.usageResetDate < todayMidnight) {
+    await this.constructor.findByIdAndUpdate(this._id, {
+      usageCount: 0,
+      usageResetDate: todayMidnight,
+    });
     this.usageCount = 0;
     this.usageResetDate = todayMidnight;
-    await this.save();
   }
 };
 
