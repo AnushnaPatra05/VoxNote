@@ -1,56 +1,92 @@
 const fs = require('fs');
-const { getOpenAIClient } = require('../utils/openaiClient');
+const OpenAI = require('openai');
+
 const Transcript = require('../models/transcript');
 const User = require('../models/user');
 
-const transcribe = async (req, res, next) => {
+const client = new OpenAI({
+  apiKey: process.env.GROQ_API_KEY,
+  baseURL: 'https://api.groq.com/openai/v1',
+});
+
+const transcribe = async (req, res) => {
   const filePath = req.file?.path;
 
   try {
+    console.log('Incoming file:', req.file);
+
     if (!req.file) {
-      return res.status(400).json({ message: 'Audio file is required.' });
+      return res.status(400).json({
+        success: false,
+        message: 'Audio file is required',
+      });
     }
 
-    const openai = getOpenAIClient();
+    if (!req.user) {
+      return res.status(401).json({
+        success: false,
+        message: 'Unauthorized user',
+      });
+    }
 
-    const whisperResponse = await openai.audio.transcriptions.create({
+    const whisperResponse = await client.audio.transcriptions.create({
       file: fs.createReadStream(filePath),
-      model: 'whisper-1',
-      response_format: 'json',
+      model: 'whisper-large-v3',
+      response_format: 'verbose_json',
+      temperature: 0,
     });
 
+    console.log('Whisper Response:', whisperResponse);
+
     const transcriptText = whisperResponse.text?.trim();
+
     if (!transcriptText) {
-      return res.status(422).json({ message: 'No speech detected in the audio.' });
+      return res.status(422).json({
+        success: false,
+        message: 'No speech detected in audio.',
+      });
     }
 
-    const saved = await Transcript.create({
+    const savedTranscript = await Transcript.create({
       userId: req.user._id,
       transcript: transcriptText,
       language: whisperResponse.language || 'en',
       status: 'completed',
     });
 
-    // Atomic increment — avoids race conditions
-    await User.findByIdAndUpdate(req.user._id, { $inc: { usageCount: 1 } });
+    await User.findByIdAndUpdate(req.user._id, {
+      $inc: {
+        usageCount: 1,
+      },
+    });
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
+
       data: {
-        id: saved._id,
-        transcript: saved.transcript,
-        language: saved.language,
-        wordCount: saved.wordCount,
-        createdAt: saved.createdAt,
+        id: savedTranscript._id,
+        transcript: savedTranscript.transcript,
+        language: savedTranscript.language,
+        createdAt: savedTranscript.createdAt,
       },
     });
   } catch (error) {
-    next(error);
+    console.error('TRANSCRIPTION ERROR:', {
+      message: error.message,
+      stack: error.stack,
+      response: error.response?.data,
+    });
+
+    return res.status(500).json({
+      success: false,
+      message: error.message || 'Transcription failed',
+    });
   } finally {
-    // Always delete temp file
     if (filePath && fs.existsSync(filePath)) {
-      fs.unlink(filePath, (err) => {
-        if (err) console.error('Failed to delete temp file:', err.message);
+      fs.unlink(filePath, err => {
+        if (err) {
+          console.error('File cleanup failed:', err.message);
+        }
       });
     }
   }

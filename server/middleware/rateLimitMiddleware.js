@@ -1,30 +1,41 @@
 const User = require('../models/user');
 
 const PLAN_LIMITS = {
-  free: 5,
+  free: 10,
   pro: Infinity,
 };
 
 const checkUsageLimit = async (req, res, next) => {
   try {
-    const user = req.user;
-    await user.resetDailyUsageIfNeeded();
+    const user = await User.findById(req.user._id);
 
-    const limit = PLAN_LIMITS[user.planType] ?? 5;
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found',
+      });
+    }
+
+    const limit = PLAN_LIMITS[user.plan || 'free'];
 
     if (user.usageCount >= limit) {
-      return res.status(429).json({
-        message: `Daily limit reached. Free plan allows ${limit} transcriptions/day.`,
-        usageCount: user.usageCount,
-        limit,
-        planType: user.planType,
+      return res.status(403).json({
+        success: false,
+        message: 'Daily transcription limit reached',
       });
     }
 
     next();
   } catch (error) {
-    next(error);
+    console.error('Rate limit middleware error:', error);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Server error',
+    });
   }
 };
 
-module.exports = { checkUsageLimit };
+module.exports = {
+  checkUsageLimit,
+};

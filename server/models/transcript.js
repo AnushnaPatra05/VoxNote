@@ -44,11 +44,10 @@ transcriptSchema.index({ transcript: 'text' });
 transcriptSchema.index({ userId: 1, createdAt: -1 });
 
 // Auto word count
-transcriptSchema.pre('save', function (next) {
+transcriptSchema.pre('save', function () {
   if (this.isModified('transcript') && this.transcript) {
     this.wordCount = this.transcript.trim().split(/\s+/).length;
   }
-  next();
 });
 
 module.exports = mongoose.model('Transcript', transcriptSchema);
