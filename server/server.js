@@ -48,7 +48,9 @@ app.use(express.urlencoded({ extended: true }));
 app.get('/', (req, res) => {
   res.send('VoxNote Backend Running');
 });
-
+app.get('/debug-routes', (req, res) => {
+  res.send('debug route working');
+});
 // Health Check
 app.get('/health', (req, res) => {
   res.status(200).json({
