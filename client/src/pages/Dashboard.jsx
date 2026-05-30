@@ -59,6 +59,7 @@ const Dashboard = () => {
       <style>{`
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes pulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+        @keyframes livePulse { 0%,100%{box-shadow:0 0 0 0 rgba(99,102,241,0.4)}70%{box-shadow:0 0 0 8px rgba(99,102,241,0)} }
       `}</style>
 
       <header style={{ background: '#fff', borderBottom: '1px solid #e5e7eb', padding: '0 24px', height: '60px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
@@ -88,7 +89,7 @@ const Dashboard = () => {
               </span>
             )}
             {isListening && (
-              <span style={{ fontSize: '12px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
+              <span style={{ fontSize: '12px', background: '#dcfce7', color: '#15803d', padding: '2px 8px', borderRadius: '12px', fontWeight: 600, animation: 'pulse 1.5s infinite' }}>
                 ● Live captions ON
               </span>
             )}
@@ -134,7 +135,7 @@ const Dashboard = () => {
               </div>
               {liveTranscript && !transcript && (
                 <p style={{ fontSize: '12px', color: '#6b7280', textAlign: 'center', margin: 0 }}>
-                  💡 Live caption preview above. Click "Transcribe with Whisper" for the accurate final version.
+                  💡 Live caption preview above. Click "Transcribe with Whisper" for the final accurate version.
                 </p>
               )}
             </div>
@@ -146,7 +147,6 @@ const Dashboard = () => {
           isLoading={isTranscribing}
           error={transcriptError}
           isLive={isRecording && isListening}
-          onDiscard={handleDiscard}
         />
 
         <HistoryPanel refreshTrigger={historyRefresh} />
