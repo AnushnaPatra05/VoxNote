@@ -30,7 +30,10 @@ app.use(rateLimit({
 app.use(express.json({ limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 
-
+console.log(authRoutes);
+app.get('/test', (req, res) => {
+  res.send('test route works');
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/speech', speechRoutes);
 app.use('/api/transcripts', transcriptRoutes);
