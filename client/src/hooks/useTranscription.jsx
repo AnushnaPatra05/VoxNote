@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { speechAPI } from '../services/api';
+import { speechAPI } from '../api/services';
 
 export const useTranscription = () => {
   const [transcript, setTranscript] = useState('');

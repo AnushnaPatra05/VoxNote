@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { transcriptAPI } from '../services/api.jsx';
+import { transcriptAPI } from '../api/services';
 import { useClipboard } from '../hooks/useClipboard.jsx';
 
 const HistoryPanel = ({ refreshTrigger }) => {
